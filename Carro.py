@@ -17,7 +17,7 @@ class Carro:
     #dist = distancia en px del (0, 0) absoluto a la posicion del triangulo
     #color = color del objeto en formato rgb
     #esc = escala que se le va a asignar al objeto
-    def __init__(self, op, color, esc, width, height):
+    def __init__(self, op, color, esc, width, height, grafo, pos_nodo):
         #Se inicializa las coordenadas de los vertices del objeto unitario
         self.points = np.array([[-4.0,-2.0,1.0], [4.0,-2.0,1.0], [4.0,2.0,1.0], [-4.0,2.0,1.0], 
                                 [-4.0,-4.0,1.0], [-1.0,-4.0,1.0], [-1.0,-3.0,1.0], [-4.0,-3.0,1.0],
@@ -28,7 +28,7 @@ class Carro:
         self.opera = op
         self.color = color
         self.esc = np.array([esc, esc])
-        self.pos = np.array([0.0, 0.0])
+        self.pos = pos_nodo
         self.dir = np.array([1.0, 0.0])
         self.width = width
         self.height = height
@@ -38,7 +38,9 @@ class Carro:
         self.delta_esc = np.array([0.0, 0.0])
         self.countdeg = 0
         self.flag = False
-
+        self.grafo = grafo
+        
+        
     def update(self):
         if self.countdeg > 0:
             self.theta += 1

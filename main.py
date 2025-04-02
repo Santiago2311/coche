@@ -11,6 +11,7 @@ import sys
 sys.path.append('..')
 from OpMat import OpMat
 from Carro import Carro
+from Grafo import *
 
 opera = OpMat()
 #r1 = Triangulo(opera)
@@ -29,7 +30,7 @@ Y_MAX=300
 
 #variable global control
 carros = []
-ncarros = 5
+#ncarros = 5
 
 def Axis():
     glShadeModel(GL_FLAT)
@@ -59,10 +60,69 @@ def init():
     glLoadIdentity()
     glClearColor(0,0,0,0)
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-    
-def InitRobots():
-    for i in range(ncarros):
-        carros.append(Carro(opera,[1.0,1.0,1.0], 5, screen_width, screen_height))
+        
+def InitGrafo():
+    graph = Grafo(screen_width, screen_height)
+    graph.nuevo_nodo(0, 0, 5) #0
+    graph.nuevo_nodo(-350, 250, 2) #1
+    graph.nuevo_nodo(-150, 250, 3) #2
+    graph.nuevo_nodo(0, 250, 5) #3
+    graph.nuevo_nodo(150, 250, 3) #4
+    graph.nuevo_nodo(350, 250, 3) #5
+    graph.nuevo_nodo(-350, 0, 2) #6
+    graph.nuevo_nodo(-150, 0, 7) #7
+    graph.nuevo_nodo(150, 0, 7) #8
+    graph.nuevo_nodo(350, 0, 7) #9
+    graph.nuevo_nodo(-350, -250, 1) #10
+    graph.nuevo_nodo(-150, -250, 6) #11
+    graph.nuevo_nodo(0, -250, 1) #12
+    graph.nuevo_nodo(150, -250, 6) #13
+    graph.nuevo_nodo(350, -250, 0) #14
+    graph.nuevo_nodo(-150, 150, 6) #15
+    graph.nuevo_nodo(-350, 150, 4) #16
+    graph.nuevo_nodo(0, 150, 2) #17
+    graph.nuevo_nodo(250, 250, 5) #18
+    graph.nuevo_nodo(250, 0, 3) #19
+    graph.nuevo_nodo(0, -100, 2) #20
+    graph.nuevo_nodo(150, -100, 7) #21
+    graph.conectar_nodos(1, 16)
+    graph.conectar_nodos(16, 6)
+    graph.conectar_nodos(6, 10)
+    graph.conectar_nodos(10, 11)
+    graph.conectar_nodos(11, 12)
+    graph.conectar_nodos(12, 13)
+    graph.conectar_nodos(13, 14)
+    graph.conectar_nodos(14, 9)
+    graph.conectar_nodos(9, 5)
+    graph.conectar_nodos(5, 18)
+    graph.conectar_nodos(18, 4)
+    graph.conectar_nodos(4, 3)
+    graph.conectar_nodos(3, 2)
+    graph.conectar_nodos(2, 1)
+    graph.conectar_nodos(16, 15)
+    graph.conectar_nodos(15, 17)
+    graph.conectar_nodos(9, 19)
+    graph.conectar_nodos(19, 8)
+    graph.conectar_nodos(8, 0)
+    graph.conectar_nodos(0, 7)
+    graph.conectar_nodos(7, 6)
+    graph.conectar_nodos(21, 20)
+    graph.conectar_nodos(11, 7)
+    graph.conectar_nodos(7, 15)
+    graph.conectar_nodos(15, 2)
+    graph.conectar_nodos(3, 17)
+    graph.conectar_nodos(17, 0)
+    graph.conectar_nodos(0, 20)
+    graph.conectar_nodos(20, 12)
+    graph.conectar_nodos(13, 21)
+    graph.conectar_nodos(21, 8)
+    graph.conectar_nodos(8, 4)
+    graph.conectar_nodos(18, 19)
+    return graph
+
+def InitRobots(graph):
+    #for i in range(ncarros):
+    carros.append(Carro(opera,[1.0,1.0,1.0], 5, screen_width, screen_height, graph, graph.posicion(10)))
 
 def display():
     for car in carros:
@@ -70,7 +130,8 @@ def display():
     
 # main program
 init()
-InitRobots()
+graph = InitGrafo()
+InitRobots(graph)
 opera.loadId()
 
 done = False
@@ -92,6 +153,7 @@ while not done:
     glClear(GL_COLOR_BUFFER_BIT)
     Axis()
     display()
+    graph.render()
     pygame.display.flip()
     pygame.time.wait(10)
 
