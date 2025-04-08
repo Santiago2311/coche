@@ -39,20 +39,30 @@ class Grafo:
         return self.nodos[id].posicion()
     
     def render(self):
-        glPointSize(5.0)
-        glColor3f(0.5, 0.5, 1.0)  # Blue for nodes
+        offset = 28
+        glPointSize(56.0)
+        glColor3f(0.7, 0.7, 0.7)  # Blue for nodes
         glBegin(GL_POINTS)
         for node_id, node in self.nodos.items():
             glVertex2f(node.x, node.y)
         glEnd()
         
         # Render edges
-        glLineWidth(10.0)
         glColor3f(0.7, 0.7, 0.7)  # Gray for edges
-        glBegin(GL_LINES)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+        glShadeModel(GL_SMOOTH)
         for node_id, node in self.nodos.items():
             for connected_id in node.aristas:
                 connected_node = self.nodos[connected_id]
-                glVertex2f(node.x, node.y)
-                glVertex2f(connected_node.x, connected_node.y)
-        glEnd()
+                glBegin(GL_QUADS)
+                if node.x - connected_node.x == 0:
+                    glVertex2f(node.x-offset, node.y)
+                    glVertex2f(node.x+offset, node.y)
+                    glVertex2f(connected_node.x+offset, connected_node.y)
+                    glVertex2f(connected_node.x-offset, connected_node.y)
+                else:
+                    glVertex2f(node.x, node.y-offset)
+                    glVertex2f(node.x, node.y+offset)
+                    glVertex2f(connected_node.x, connected_node.y+offset)
+                    glVertex2f(connected_node.x, connected_node.y-offset)
+                glEnd()

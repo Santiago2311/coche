@@ -37,37 +37,80 @@ class Carro:
         #self.turn_LR = 0 #0 left, 1 right
         self.delta_esc = np.array([0.0, 0.0])
         self.countdeg = 0
-        self.flag = False
         self.grafo = grafo
-        
+        self.flag = True
+        self.dirdest = np.array([1.0, 0.0])
+        #Colision
+        self.radio = math.sqrt((4*esc)**2+(4*esc)**2)
+        self.col = False
         
     def update(self):
-        if self.countdeg > 0:
-            self.theta += 1
-            self.dir[0] = np.cos(math.radians(self.theta))
-            self.dir[1] = np.sin(math.radians(self.theta))
-            self.countdeg -= 1
-        elif self.countdeg < 0:
-            self.theta -= 1
-            self.countdeg += 1
-            self.dir[0] = np.cos(math.radians(self.theta))
-            self.dir[1] = np.sin(math.radians(self.theta))
-        elif self.countdeg == 0:
-            random.seed(os.urandom(128))
-            value = random.randint(1,100)
-            if self.flag:
-                self.up()
-            self.flag = False
-            if (self.pos[0] + (5*self.esc[1]) == self.width/2 or self.pos[1] + (5*self.esc[1]) == self.height/2 
-            or self.pos[0] - (5*self.esc[1]) == -self.width/2 or self.pos[1] - (5*self.esc[1]) == -self.height/2):
-                self.countdeg = 180
-                self.flag = True
-            elif value == 49:
-                self.setTurnLR('L')
-            elif value == 50:
-                self.setTurnLR('R')
-            else:
-                self.up()
+        if not self.col:
+            if self.countdeg == 0:
+                if not np.allclose(self.dirdest, self.dir):
+                    self.setTurnLR('L')
+                else:
+                    for nodo_id, nodo in self.grafo.nodos.items():
+                        if np.array_equal(self.pos, nodo.posicion()):                        
+                            random.seed(os.urandom(128))
+                            if nodo.tipo == 0:
+                                self.dirdest = np.array([0.0, 1.0])
+                            elif nodo.tipo == 1:
+                                self.dirdest = np.array([1.0, 0.0])
+                            elif nodo.tipo == 2:
+                                self.dirdest = np.array([0.0, -1.0])
+                            elif nodo.tipo == 3:
+                                self.dirdest = np.array([-1.0, 0.0])
+                            elif nodo.tipo == 4 and self.flag:
+                                value = random.randint(1,2)
+                                self.flag=False
+                                if value == 1:
+                                    self.dirdest = np.array([0.0, -1.0])
+                                else:
+                                    self.dirdest = np.array([1.0, 0.0])
+                            elif nodo.tipo == 5 and self.flag:
+                                value = random.randint(1,2)
+                                self.flag=False
+                                if value == 1:
+                                    self.dirdest = np.array([0.0, -1.0])
+                                else:
+                                    self.dirdest = np.array([-1.0, 0.0])
+                            elif nodo.tipo == 6 and self.flag:
+                                value = random.randint(1,2)
+                                self.flag=False
+                                if value == 1:
+                                    self.dirdest = np.array([0.0, 1.0])
+                                else:
+                                    self.dirdest = np.array([1.0, 0.0])
+                            elif nodo.tipo == 7 and self.flag:
+                                value = random.randint(1,2)
+                                self.flag=False
+                                if value == 1:
+                                    self.dirdest = np.array([0.0, 1.0])
+                                else:
+                                    self.dirdest = np.array([-1.0, 0.0])
+                        elif nodo_id == 22 and np.allclose(self.dirdest, self.dir):
+                            self.flag=True
+                            self.up()
+            elif self.countdeg > 0:
+                self.theta += 1
+                self.dir[0] = np.cos(math.radians(self.theta))
+                self.dir[1] = np.sin(math.radians(self.theta))
+                self.countdeg -= 1
+            elif self.countdeg < 0:
+                self.theta -= 1
+                self.countdeg += 1
+                self.dir[0] = np.cos(math.radians(self.theta))
+                self.dir[1] = np.sin(math.radians(self.theta))
+            '''elif self.countdeg == 0:
+                random.seed(os.urandom(128))
+                value = random.randint(1,100)
+                if value == 49:
+                    self.setTurnLR('L')
+                elif value == 50:
+                    self.setTurnLR('R')
+                else:
+                    self.up()'''
     
     def setColor(self, r, g, b):
         self.color[0] = r
@@ -112,6 +155,7 @@ class Carro:
         pointsR = self.points.copy()
         self.opera.mult_Points(pointsR)
         glColor3fv(self.color)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
         glBegin(GL_QUADS)
         glVertex2f(pointsR[0][0],pointsR[0][1])
         glVertex2f(pointsR[1][0],pointsR[1][1])
@@ -154,3 +198,16 @@ class Carro:
         if self.countdeg == 0:
             self.pos[0] -= self.dir[0]
             self.pos[1] -= self.dir[1]
+    
+    def d_e(self, posicion, posicion2):
+        x = posicion2[0] - posicion[0]
+        y = posicion2[1] - posicion[1] 
+        return math.sqrt((x**2)+(y**2))
+    
+    def detCol(self, carro):
+        new_pos = self.pos + self.dir
+        dist_centros = self.d_e(new_pos, carro.pos)
+        if (self.radio + carro.radio >= dist_centros):
+            self.col = True
+        else:
+            self.col = False
