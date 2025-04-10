@@ -12,6 +12,7 @@ sys.path.append('..')
 from OpMat import OpMat
 from Carro import Carro
 from Grafo import *
+from Human import Human
 
 opera = OpMat()
 #r1 = Triangulo(opera)
@@ -52,7 +53,7 @@ def Axis():
 def init():
     screen = pygame.display.set_mode(
         (screen_width, screen_height), DOUBLEBUF | OPENGL)
-    pygame.display.set_caption("OpenGL: ejes 3D")
+    pygame.display.set_caption("OpenGL: ejes 2D")
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     gluOrtho2D(-450,450,-300,300)
@@ -132,16 +133,17 @@ def InitRobots(graph):
     carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(20)))
     carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(12)))
     carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(3)))
-    carros.append(Carro(opera,[1.0,1.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(0)))
-    
+    carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(0)))
+    carros.append(Human(opera,[1.0,1.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(17)))
 
 def display():
     for c1 in carros:
         for c2 in carros:
             if c1 != c2:
                 c1.detCol(c2)
-                if c1.col == True:
+                if c1.col:
                     break
+
     for car in carros:
         car.render()
     
@@ -154,13 +156,13 @@ opera.loadId()
 done = False
 while not done:
     keys = pygame.key.get_pressed()
-    '''if keys[pygame.K_LEFT]:
-        r1.setTurnLR('L')
+    if keys[pygame.K_LEFT]:
+        carros[-1].setTurnLR('L')
     if keys[pygame.K_RIGHT]:
-        r1.setTurnLR('R')
+        carros[-1].setTurnLR('R')
     if keys[pygame.K_UP]:
-        r1.up()
-    if keys[pygame.K_DOWN]:
+        carros[-1].up()
+    '''if keys[pygame.K_DOWN]:
         r1.down()'''
     
     for event in pygame.event.get():

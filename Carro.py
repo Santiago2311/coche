@@ -48,7 +48,10 @@ class Carro:
         if not self.col:
             if self.countdeg == 0:
                 if not np.allclose(self.dirdest, self.dir):
-                    self.setTurnLR('L')
+                    if (np.allclose(self.dir, [1.0, 0.0]) and np.array_equal(self.dirdest, [0.0, 1.0])) or (np.allclose(self.dir, [-1.0, 0.0]) and np.array_equal(self.dirdest, [0.0, -1.0])) or (np.allclose(self.dir, [0.0, 1.0]) and np.array_equal(self.dirdest, [-1.0, 0.0])) or (np.allclose(self.dir, [0.0, -1.0]) and np.array_equal(self.dirdest, [1.0, 0.0])):
+                        self.setTurnLR('L')
+                    else: 
+                        self.setTurnLR('R')
                 else:
                     for nodo_id, nodo in self.grafo.nodos.items():
                         if np.array_equal(self.pos, nodo.posicion()):                        
@@ -155,7 +158,7 @@ class Carro:
         pointsR = self.points.copy()
         self.opera.mult_Points(pointsR)
         glColor3fv(self.color)
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
         glBegin(GL_QUADS)
         glVertex2f(pointsR[0][0],pointsR[0][1])
         glVertex2f(pointsR[1][0],pointsR[1][1])
