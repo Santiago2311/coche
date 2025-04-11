@@ -1,9 +1,9 @@
-#Autor: Ivan Olmos Pineda
+#Author: Modified from Ivan Olmos Pineda's code
 
 import pygame
 from pygame.locals import *
 
-# Cargamos las bibliotecas de OpenGL
+# OpenGL libraries
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
@@ -14,203 +14,203 @@ import math
 import numpy as np
 
 class Carro:
-    #dist = distancia en px del (0, 0) absoluto a la posicion del triangulo
-    #color = color del objeto en formato rgb
-    #esc = escala que se le va a asignar al objeto
-    def __init__(self, op, color, esc, width, height, grafo, pos_nodo):
-        #Se inicializa las coordenadas de los vertices del objeto unitario
-        self.points = np.array([[-4.0,-2.0,1.0], [4.0,-2.0,1.0], [4.0,2.0,1.0], [-4.0,2.0,1.0], 
-                                [-4.0,-4.0,1.0], [-1.0,-4.0,1.0], [-1.0,-3.0,1.0], [-4.0,-3.0,1.0],
-                                [0.0, -4.0, 1.0], [3.0,-4.0,1.0], [3.0,-3.0,1.0], [0.0,-3.0,1.0],
-                                [-4.0,3.0,1.0], [-1.0,3.0,1.0], [-1.0,4.0,1.0], [-4.0,4.0,1.0],
-                                [0.0,3.0,1.0], [3.0,3.0,1.0], [3.0,4.0,1.0], [0.0,4.0,1.0]
-                                ])
-        self.opera = op
-        self.color = color
-        self.esc = np.array([esc, esc])
-        self.pos = pos_nodo
-        self.dir = np.array([1.0, 0.0])
-        self.width = width
-        self.height = height
-        self.theta = 0.0
-        self.deltatheta = 0.0
-        #self.turn_LR = 0 #0 left, 1 right
-        self.delta_esc = np.array([0.0, 0.0])
-        self.countdeg = 0
-        self.grafo = grafo
-        self.flag = True
-        self.dirdest = np.array([1.0, 0.0])
-        #Colision
-        self.radio = math.sqrt((4*esc)**2+(4*esc)**2)
-        self.col = False
+    def __init__(self, transform, vehicle_color, scale_factor, screen_width, screen_height, road_network, initial_position):
+        # Initialize vertices for the vehicle shape (unit object)
+        self.vertices = np.array([
+            [-4.0, -2.0, 1.0], [4.0, -2.0, 1.0], [4.0, 2.0, 1.0], [-4.0, 2.0, 1.0], 
+            [-4.0, -4.0, 1.0], [-1.0, -4.0, 1.0], [-1.0, -3.0, 1.0], [-4.0, -3.0, 1.0],
+            [0.0, -4.0, 1.0], [3.0, -4.0, 1.0], [3.0, -3.0, 1.0], [0.0, -3.0, 1.0],
+            [-4.0, 3.0, 1.0], [-1.0, 3.0, 1.0], [-1.0, 4.0, 1.0], [-4.0, 4.0, 1.0],
+            [0.0, 3.0, 1.0], [3.0, 3.0, 1.0], [3.0, 4.0, 1.0], [0.0, 4.0, 1.0]
+        ])
         
-    def update(self):
-        if not self.col:
-            if self.countdeg == 0:
-                if not np.allclose(self.dirdest, self.dir):
-                    if (np.allclose(self.dir, [1.0, 0.0]) and np.array_equal(self.dirdest, [0.0, 1.0])) or (np.allclose(self.dir, [-1.0, 0.0]) and np.array_equal(self.dirdest, [0.0, -1.0])) or (np.allclose(self.dir, [0.0, 1.0]) and np.array_equal(self.dirdest, [-1.0, 0.0])) or (np.allclose(self.dir, [0.0, -1.0]) and np.array_equal(self.dirdest, [1.0, 0.0])):
-                        self.setTurnLR('L')
+        # Basic properties
+        self.transform = transform
+        self.color = vehicle_color
+        self.scale = np.array([scale_factor, scale_factor])
+        self.position = initial_position
+        self.direction = np.array([1.0, 0.0])
+        self.screen_dimensions = (screen_width, screen_height)
+        self.rotation_angle = 0.0
+        self.delta_rotation = 0.0
+        self.delta_scale = np.array([0.0, 0.0])
+        self.rotation_counter = 0
+        self.road_network = road_network
+        self.turning = True
+        self.target_direction = np.array([1.0, 0.0])
+        
+        # Collision detection
+        self.radius = math.sqrt((4*scale_factor)**2 + (4*scale_factor)**2)
+        self.collision_detected = False
+        
+    def update_state(self):
+        if not self.collision_detected:
+            if self.rotation_counter == 0:
+                if not np.allclose(self.target_direction, self.direction):
+                    # Determine turn direction based on current and target directions
+                    if ((np.allclose(self.direction, [1.0, 0.0]) and np.array_equal(self.target_direction, [0.0, 1.0])) or 
+                        (np.allclose(self.direction, [-1.0, 0.0]) and np.array_equal(self.target_direction, [0.0, -1.0])) or 
+                        (np.allclose(self.direction, [0.0, 1.0]) and np.array_equal(self.target_direction, [-1.0, 0.0])) or 
+                        (np.allclose(self.direction, [0.0, -1.0]) and np.array_equal(self.target_direction, [1.0, 0.0]))):
+                        self.set_turn_direction('LEFT')
                     else: 
-                        self.setTurnLR('R')
+                        self.set_turn_direction('RIGHT')
                 else:
-                    for nodo_id, nodo in self.grafo.nodos.items():
-                        if np.array_equal(self.pos, nodo.posicion()):                        
+                    # At intersections, choose a new direction based on node type
+                    for node_id, node in self.road_network.nodes.items():
+                        if np.array_equal(self.position, node.get_position()):                        
                             random.seed(os.urandom(128))
-                            if nodo.tipo == 0:
-                                self.dirdest = np.array([0.0, 1.0])
-                            elif nodo.tipo == 1:
-                                self.dirdest = np.array([1.0, 0.0])
-                            elif nodo.tipo == 2:
-                                self.dirdest = np.array([0.0, -1.0])
-                            elif nodo.tipo == 3:
-                                self.dirdest = np.array([-1.0, 0.0])
-                            elif nodo.tipo == 4 and self.flag:
-                                value = random.randint(1,2)
-                                self.flag=False
+                            
+                            # Direction based on node type
+                            if node.type == 0:  # North only
+                                self.target_direction = np.array([0.0, 1.0])
+                            elif node.type == 1:  # East only
+                                self.target_direction = np.array([1.0, 0.0])
+                            elif node.type == 2:  # South only
+                                self.target_direction = np.array([0.0, -1.0])
+                            elif node.type == 3:  # West only
+                                self.target_direction = np.array([-1.0, 0.0])
+                            elif node.type == 4 and self.turning:  # East or South
+                                value = random.randint(1, 2)
+                                self.turning = False
                                 if value == 1:
-                                    self.dirdest = np.array([0.0, -1.0])
+                                    self.target_direction = np.array([0.0, -1.0])
                                 else:
-                                    self.dirdest = np.array([1.0, 0.0])
-                            elif nodo.tipo == 5 and self.flag:
-                                value = random.randint(1,2)
-                                self.flag=False
+                                    self.target_direction = np.array([1.0, 0.0])
+                            elif node.type == 5 and self.turning:  # West or South
+                                value = random.randint(1, 2)
+                                self.turning = False
                                 if value == 1:
-                                    self.dirdest = np.array([0.0, -1.0])
+                                    self.target_direction = np.array([0.0, -1.0])
                                 else:
-                                    self.dirdest = np.array([-1.0, 0.0])
-                            elif nodo.tipo == 6 and self.flag:
-                                value = random.randint(1,2)
-                                self.flag=False
+                                    self.target_direction = np.array([-1.0, 0.0])
+                            elif node.type == 6 and self.turning:  # East or North
+                                value = random.randint(1, 2)
+                                self.turning = False
                                 if value == 1:
-                                    self.dirdest = np.array([0.0, 1.0])
+                                    self.target_direction = np.array([0.0, 1.0])
                                 else:
-                                    self.dirdest = np.array([1.0, 0.0])
-                            elif nodo.tipo == 7 and self.flag:
-                                value = random.randint(1,2)
-                                self.flag=False
+                                    self.target_direction = np.array([1.0, 0.0])
+                            elif node.type == 7 and self.turning:  # West or North
+                                value = random.randint(1, 2)
+                                self.turning = False
                                 if value == 1:
-                                    self.dirdest = np.array([0.0, 1.0])
+                                    self.target_direction = np.array([0.0, 1.0])
                                 else:
-                                    self.dirdest = np.array([-1.0, 0.0])
-                        elif nodo_id == 22 and np.allclose(self.dirdest, self.dir):
-                            self.flag=True
-                            self.up()
-            elif self.countdeg > 0:
-                self.theta += 1
-                self.dir[0] = np.cos(math.radians(self.theta))
-                self.dir[1] = np.sin(math.radians(self.theta))
-                self.countdeg -= 1
-            elif self.countdeg < 0:
-                self.theta -= 1
-                self.countdeg += 1
-                self.dir[0] = np.cos(math.radians(self.theta))
-                self.dir[1] = np.sin(math.radians(self.theta))
-            '''elif self.countdeg == 0:
-                random.seed(os.urandom(128))
-                value = random.randint(1,100)
-                if value == 49:
-                    self.setTurnLR('L')
-                elif value == 50:
-                    self.setTurnLR('R')
-                else:
-                    self.up()'''
+                                    self.target_direction = np.array([-1.0, 0.0])
+                            elif node.type == 8 and self.turning:  # All directions
+                                value = random.randint(1, 4)
+                                self.turning = False
+                                if value == 1:
+                                    self.target_direction = np.array([0.0, 1.0])  # North
+                                elif value == 2:
+                                    self.target_direction = np.array([1.0, 0.0])  # East
+                                elif value == 3:
+                                    self.target_direction = np.array([0.0, -1.0])  # South
+                                else:
+                                    self.target_direction = np.array([-1.0, 0.0])  # West
+                            elif node.type == 9 and self.turning:  # North or East or West
+                                value = random.randint(1, 3)
+                                self.turning = False
+                                if value == 1:
+                                    self.target_direction = np.array([0.0, 1.0])  # North
+                                elif value == 2:
+                                    self.target_direction = np.array([1.0, 0.0])  # East
+                                else:
+                                    self.target_direction = np.array([-1.0, 0.0])  # West
+                        elif node_id == 22 and np.allclose(self.target_direction, self.direction):
+                            self.turning = True
+                            self.move_forward()
+            elif self.rotation_counter > 0:  # Turning left
+                self.rotation_angle += 1
+                self.direction[0] = np.cos(math.radians(self.rotation_angle))
+                self.direction[1] = np.sin(math.radians(self.rotation_angle))
+                self.rotation_counter -= 1
+            elif self.rotation_counter < 0:  # Turning right
+                self.rotation_angle -= 1
+                self.rotation_counter += 1
+                self.direction[0] = np.cos(math.radians(self.rotation_angle))
+                self.direction[1] = np.sin(math.radians(self.rotation_angle))
     
-    def setColor(self, r, g, b):
+    def set_color(self, r, g, b):
         self.color[0] = r
         self.color[1] = g
         self.color[2] = b
     
-    def setpos(self, pos):
-        self.pos[0] = pos[0]
-        self.pos[1] = pos[1]
+    def set_position(self, new_position):
+        self.position[0] = new_position[0]
+        self.position[1] = new_position[1]
     
-    def setDeltaDir(self, dir):
-        self.dir[0] = dir[0]
-        self.dir[1] = dir[1]
+    def set_direction(self, new_direction):
+        self.direction[0] = new_direction[0]
+        self.direction[1] = new_direction[1]
     
-    def setDeg(self, theta):
-        self.theta = theta
+    def set_rotation(self, angle):
+        self.rotation_angle = angle
     
-    def setDeltaDeg(self, deltatheta):
-        self.deltatheta = deltatheta
+    def set_delta_rotation(self, delta):
+        self.delta_rotation = delta
     
-    def setScale(self, esc):
-        self.esc[0] = esc[0]
-        self.esc[1] = esc[1]
+    def set_scale(self, new_scale):
+        self.scale[0] = new_scale[0]
+        self.scale[1] = new_scale[1]
         
-    def setDeltaScale(self, delta_esc):
-        self.delta_esc[0] = delta_esc[0]
-        self.delta_esc[1] = delta_esc[1]
+    def set_delta_scale(self, delta):
+        self.delta_scale[0] = delta[0]
+        self.delta_scale[1] = delta[1]
     
-    def setTurnLR(self, LR):
-        if self.countdeg == 0:
-            if LR == 'L':
-                self.countdeg = 90
+    def set_turn_direction(self, direction):
+        if self.rotation_counter == 0:
+            if direction == 'LEFT':
+                self.rotation_counter = 90
             else:
-                self.countdeg = -90
+                self.rotation_counter = -90
             
-    def render(self): #se recibe estado e0
-        self.opera.push() #se respalda
-        self.opera.translate(self.pos[0], self.pos[1])
-        if self.theta != 0:
-            self.opera.rotate(self.theta)
-        self.opera.scale(self.esc[0], self.esc[1]) #e3
-        pointsR = self.points.copy()
-        self.opera.mult_Points(pointsR)
+    def render(self):
+        self.transform.push()  # Save current state
+        self.transform.translate(self.position[0], self.position[1])
+        if self.rotation_angle != 0:
+            self.transform.rotate(self.rotation_angle)
+        self.transform.scale(self.scale[0], self.scale[1])
+        
+        transformed_vertices = self.vertices.copy()
+        self.transform.mult_Points(transformed_vertices)
+        
         glColor3fv(self.color)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-        glBegin(GL_QUADS)
-        glVertex2f(pointsR[0][0],pointsR[0][1])
-        glVertex2f(pointsR[1][0],pointsR[1][1])
-        glVertex2f(pointsR[2][0],pointsR[2][1])
-        glVertex2f(pointsR[3][0], pointsR[3][1])
-        glEnd()
-        glBegin(GL_QUADS)
-        glVertex2f(pointsR[4][0],pointsR[4][1])
-        glVertex2f(pointsR[5][0],pointsR[5][1])
-        glVertex2f(pointsR[6][0],pointsR[6][1])
-        glVertex2f(pointsR[7][0], pointsR[7][1])
-        glEnd()
-        glBegin(GL_QUADS)
-        glVertex2f(pointsR[8][0],pointsR[8][1])
-        glVertex2f(pointsR[9][0],pointsR[9][1])
-        glVertex2f(pointsR[10][0],pointsR[10][1])
-        glVertex2f(pointsR[11][0], pointsR[11][1])
-        glEnd()
-        glBegin(GL_QUADS)
-        glVertex2f(pointsR[12][0],pointsR[12][1])
-        glVertex2f(pointsR[13][0],pointsR[13][1])
-        glVertex2f(pointsR[14][0],pointsR[14][1])
-        glVertex2f(pointsR[15][0], pointsR[15][1])
-        glEnd()
-        glBegin(GL_QUADS)
-        glVertex2f(pointsR[16][0],pointsR[16][1])
-        glVertex2f(pointsR[17][0],pointsR[17][1])
-        glVertex2f(pointsR[18][0],pointsR[18][1])
-        glVertex2f(pointsR[19][0], pointsR[19][1])
-        glEnd()
-        self.opera.pop()
-        self.update()
+        
+        # Draw the vehicle body (each quad)
+        for i in range(0, 20, 4):
+            glBegin(GL_QUADS)
+            glVertex2f(transformed_vertices[i][0], transformed_vertices[i][1])
+            glVertex2f(transformed_vertices[i+1][0], transformed_vertices[i+1][1])
+            glVertex2f(transformed_vertices[i+2][0], transformed_vertices[i+2][1])
+            glVertex2f(transformed_vertices[i+3][0], transformed_vertices[i+3][1])
+            glEnd()
+            
+        self.transform.pop()  # Restore state
+        self.update_state()
     
-    def up(self):
-        if self.countdeg == 0:
-            self.pos[0] += self.dir[0]
-            self.pos[1] += self.dir[1]
+    def move_forward(self):
+        if self.rotation_counter == 0:
+            self.position[0] += self.direction[0]
+            self.position[1] += self.direction[1]
     
-    def down(self):
-        if self.countdeg == 0:
-            self.pos[0] -= self.dir[0]
-            self.pos[1] -= self.dir[1]
+    def move_backward(self):
+        if self.rotation_counter == 0:
+            self.position[0] -= self.direction[0]
+            self.position[1] -= self.direction[1]
     
-    def d_e(self, posicion, posicion2):
-        x = posicion2[0] - posicion[0]
-        y = posicion2[1] - posicion[1] 
-        return math.sqrt((x**2)+(y**2))
+    def calculate_distance(self, pos1, pos2):
+        x_diff = pos2[0] - pos1[0]
+        y_diff = pos2[1] - pos1[1] 
+        return math.sqrt((x_diff**2) + (y_diff**2))
     
-    def detCol(self, carro):
-        new_pos = self.pos + self.dir
-        dist_centros = self.d_e(new_pos, carro.pos)
-        if (self.radio + carro.radio >= dist_centros):
-            self.col = True
+    def detect_collision(self, other_vehicle):
+        next_position = self.position + self.direction
+        distance = self.calculate_distance(next_position, other_vehicle.position)
+        
+        if (self.radius + other_vehicle.radius >= distance):
+            self.collision_detected = True
         else:
-            self.col = False
+            self.collision_detected = False
