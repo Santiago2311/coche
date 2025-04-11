@@ -124,7 +124,7 @@ def InitGrafo():
 
 def InitRobots(graph):
     #for i in range(ncarros):
-    '''carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(14)))
+    carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(14)))
     carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(5)))
     carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(10)))
     carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(8)))
@@ -133,7 +133,7 @@ def InitRobots(graph):
     carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(20)))
     carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(12)))
     carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(3)))
-    carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(0)))'''
+    carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(0)))
     carros.append(Human(opera,[1.0,1.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(17)))
 
 def display():

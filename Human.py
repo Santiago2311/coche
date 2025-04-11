@@ -77,11 +77,6 @@ class Human:
                                 self.move = 'R'
                             elif keys[pygame.K_UP]:
                                 self.move = 'U'
-                        elif nodo_id == 22:
-                            for dir in self.posdir:
-                                if np.allclose(dir,self.dir) and self.move == 'U':
-                                    #self.up()
-                                    print('a')
                 for dir in self.posdir:
                     if self.move == 'L' and np.allclose([np.cos(math.radians(self.theta+90)), np.sin(math.radians(self.theta+90))], dir):
                         self.setTurnLR('L')
