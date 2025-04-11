@@ -38,63 +38,62 @@ class Human:
         self.delta_esc = np.array([0.0, 0.0])
         self.countdeg = 0
         self.grafo = grafo
-        self.flag = True
-        self.dirdest = np.array([1.0, 0.0])
+        self.posdir = []
         #Colision
         self.radio = math.sqrt((4*esc)**2+(4*esc)**2)
         self.col = False
+        self.move = ''
+        self.flag = False
         
     def update(self):
         if not self.col:
             if self.countdeg == 0:
-                if not np.allclose(self.dirdest, self.dir):
-                    if (np.allclose(self.dir, [1.0, 0.0]) and np.array_equal(self.dirdest, [0.0, 1.0])) or (np.allclose(self.dir, [-1.0, 0.0]) and np.array_equal(self.dirdest, [0.0, -1.0])) or (np.allclose(self.dir, [0.0, 1.0]) and np.array_equal(self.dirdest, [-1.0, 0.0])) or (np.allclose(self.dir, [0.0, -1.0]) and np.array_equal(self.dirdest, [1.0, 0.0])):
-                        self.setTurnLR('L')
-                    else: 
-                        self.setTurnLR('R')
-                else:
-                    for nodo_id, nodo in self.grafo.nodos.items():
-                        if np.array_equal(self.pos, nodo.posicion()):                        
-                            random.seed(os.urandom(128))
+                for nodo_id, nodo in self.grafo.nodos.items():
+                        if np.array_equal(self.pos, nodo.posicion()):
                             if nodo.tipo == 0:
-                                self.dirdest = np.array([0.0, 1.0])
+                                self.posdir = [np.array([0.0, 1.0])]
                             elif nodo.tipo == 1:
-                                self.dirdest = np.array([1.0, 0.0])
+                                self.posdir = [np.array([1.0, 0.0])]
                             elif nodo.tipo == 2:
-                                self.dirdest = np.array([0.0, -1.0])
+                                self.posdir = [np.array([0.0, -1.0])]
                             elif nodo.tipo == 3:
-                                self.dirdest = np.array([-1.0, 0.0])
-                            elif nodo.tipo == 4 and self.flag:
-                                value = random.randint(1,2)
-                                self.flag=False
-                                if value == 1:
-                                    self.dirdest = np.array([0.0, -1.0])
-                                else:
-                                    self.dirdest = np.array([1.0, 0.0])
-                            elif nodo.tipo == 5 and self.flag:
-                                value = random.randint(1,2)
-                                self.flag=False
-                                if value == 1:
-                                    self.dirdest = np.array([0.0, -1.0])
-                                else:
-                                    self.dirdest = np.array([-1.0, 0.0])
-                            elif nodo.tipo == 6 and self.flag:
-                                value = random.randint(1,2)
-                                self.flag=False
-                                if value == 1:
-                                    self.dirdest = np.array([0.0, 1.0])
-                                else:
-                                    self.dirdest = np.array([1.0, 0.0])
-                            elif nodo.tipo == 7 and self.flag:
-                                value = random.randint(1,2)
-                                self.flag=False
-                                if value == 1:
-                                    self.dirdest = np.array([0.0, 1.0])
-                                else:
-                                    self.dirdest = np.array([-1.0, 0.0])
-                        elif nodo_id == 22 and np.allclose(self.dirdest, self.dir):
-                            self.flag=True
-                            self.up()
+                                self.posdir = [np.array([-1.0, 0.0])]
+                            elif nodo.tipo == 4:
+                                self.posdir = [np.array([1.0, 0.0]), np.array([0.0, -1.0])]
+                            elif nodo.tipo == 5:
+                                self.posdir = [np.array([-1.0, 0.0]), np.array([0.0, -1.0])]
+                            elif nodo.tipo == 6:
+                                self.posdir = [np.array([1.0, 0.0]), np.array([0.0, 1.0])]
+                            elif nodo.tipo == 7:
+                                self.posdir = [np.array([-1.0, 0.0]), np.array([0.0, 1.0])]
+                            self.move = ''
+                            if self.flag:
+                                self.move = 'U'
+                                self.flag = False
+                            keys = pygame.key.get_pressed()
+                            if keys[pygame.K_LEFT]:
+                                self.move = 'L'
+                            elif keys[pygame.K_RIGHT]:
+                                self.move = 'R'
+                            elif keys[pygame.K_UP]:
+                                self.move = 'U'
+                        elif nodo_id == 22:
+                            for dir in self.posdir:
+                                if np.allclose(dir,self.dir) and self.move == 'U':
+                                    #self.up()
+                                    print('a')
+                for dir in self.posdir:
+                    if self.move == 'L' and np.allclose([np.cos(math.radians(self.theta+90)), np.sin(math.radians(self.theta+90))], dir):
+                        self.setTurnLR('L')
+                        self.move = 'U'
+                        self.flag = True
+                    elif self.move == 'R' and np.allclose([np.cos(math.radians(self.theta-90)), np.sin(math.radians(self.theta-90))], dir):
+                        self.setTurnLR('R')
+                        self.move = 'U'
+                        self.flag = True
+                    elif self.move == 'U' and np.allclose(self.dir, dir):
+                        self.up()
+                
             elif self.countdeg > 0:
                 self.theta += 1
                 self.dir[0] = np.cos(math.radians(self.theta))

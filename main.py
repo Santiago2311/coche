@@ -86,7 +86,7 @@ def InitGrafo():
     graph.nuevo_nodo(250, 0, 3) #19
     graph.nuevo_nodo(0, -100, 2) #20
     graph.nuevo_nodo(150, -100, 7) #21
-    graph.nuevo_nodo(400, 400, 0)
+    graph.nuevo_nodo(400, 400, -1)
     graph.conectar_nodos(1, 16)
     graph.conectar_nodos(16, 6)
     graph.conectar_nodos(6, 10)
@@ -124,7 +124,7 @@ def InitGrafo():
 
 def InitRobots(graph):
     #for i in range(ncarros):
-    carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(14)))
+    '''carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(14)))
     carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(5)))
     carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(10)))
     carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(8)))
@@ -133,7 +133,7 @@ def InitRobots(graph):
     carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(20)))
     carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(12)))
     carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(3)))
-    carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(0)))
+    carros.append(Carro(opera,[1.0,0.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(0)))'''
     carros.append(Human(opera,[1.0,1.0,0.0], 5, screen_width, screen_height, graph, graph.posicion(17)))
 
 def display():
@@ -155,13 +155,6 @@ opera.loadId()
 
 done = False
 while not done:
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_LEFT]:
-        carros[-1].setTurnLR('L')
-    if keys[pygame.K_RIGHT]:
-        carros[-1].setTurnLR('R')
-    if keys[pygame.K_UP]:
-        carros[-1].up()
     '''if keys[pygame.K_DOWN]:
         r1.down()'''
     
@@ -174,6 +167,6 @@ while not done:
     graph.render()
     display()
     pygame.display.flip()
-    pygame.time.wait(10)
+    pygame.time.wait(50)
 
 pygame.quit()
